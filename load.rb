@@ -1,4 +1,5 @@
 require 'colorize'
+require 'debugger'
 require_relative 'nodes'
 require_relative 'game'
 require_relative 'board'
@@ -32,10 +33,10 @@ require_relative 'piece'
 # c.play
 
 b = Board.new
-a = Piece.new([2,0], :red, b)
+a = Piece.new([6,2], :red, b)
 c = Piece.new([3,5], :white, b)
 d = Piece.new([5,3], :white, b)
-e = Piece.new([3,1], :white, b)
+e = Piece.new([3,1], :white, b, true)
 f = Piece.new([5,5], :white, b)
 
 b[a.position] = a
@@ -43,8 +44,13 @@ b[c.position] = c
 b[d.position] = d
 b[e.position] = e
 b[f.position] = f
-# b.move([2,0],[1,1],:red)
 puts b
+# p b.move(c.position,[[1,3]], :white)
+a.perform_moves([[7,3]])
+puts b
+# p b.forced_to_jump?(:red)
+# b.move([2,0],[1,1],:red)
+# puts b
 # a.skip_diffs.each do |diff|
 #   p diff
 # end

@@ -21,9 +21,12 @@ class Board
   end
 
   def move(start_pos, moves, color)
+    # p start_pos
+    # p moves
+    # p color
     piece = self[start_pos]
     move_precheck(piece,color)
-
+    # p moves
     piece.perform_moves(moves) if piece.valid_move_seq?(moves)
   end
 
@@ -67,10 +70,10 @@ class Board
     DIMENSION.times do |x|
       DIMENSION.times do |y|
         if x < 3
-          self[[x,y]] = Piece.new([x,y], :red, self, true) if (x + y).even?
+          self[[x,y]] = Piece.new([x,y], :red, self) if (x + y).even?
         end
         if x > 4
-          self[[x,y]] = Piece.new([x,y], :white, self, true) if (x + y).even?
+          self[[x,y]] = Piece.new([x,y], :white, self) if (x + y).even?
         end
       end
     end
@@ -80,12 +83,6 @@ class Board
 
   def self.generate_board
     grid = Array.new(DIMENSION) { Array.new(DIMENSION) }
-  end
-
-  def valid_move?(piece, end_pos, color)
-
-
-    true
   end
 
   def no_valid_moves?(color)

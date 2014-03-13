@@ -1,3 +1,4 @@
+#coding: utf-8
 class Piece
   attr_accessor :position, :color, :king, :board
 
@@ -11,15 +12,16 @@ class Piece
   end
 
   def perform_moves!(move_sequence)
+    first_move = move_sequence[0]
+    unless perform_slide?(first_move) || perform_jump?(first_move)
+      raise IllegalMoveError
+    else
+
     if move_sequence.length == 1
-      move = move_sequence[0]
-      unless perform_slide(move) || perform_jump(move)
-        raise IllegalMoveError
-      else
-        if perform_jump(move)
-          make_capture(move)
+    if perform_jump?(first_move)
+          make_capture(first_move)
         else
-          @board.update_piece_position(@position, move)
+          @board.update_piece_position(@position, first_move)
         end
         return true
       end
@@ -39,37 +41,39 @@ class Piece
   end
 
   def perform_moves(move_sequence)
+    # debugger
     if valid_move_seq?(move_sequence)
       perform_moves!(move_sequence)
+      promote_if_possible unless @king
     else
       raise IllegalMoveError
     end
   end
 
   def valid_move_seq?(move_sequence)
+
     duped_board = @board.dup
     duped_piece = duped_board[@position]
+    # debugger
     begin
       duped_piece.perform_moves!(move_sequence)
     rescue Exception => e
-      puts e.message
+      puts "not a valid sequence!"
       return false
     else
       true
     end
   end
 
-  def perform_slide(end_pos)
-    move_diffs.select do |diff|
-      [@position[0] + diff[0], @position[1] + diff[1]] == end_pos
-    end.any? &&
+  def perform_slide?(end_pos)
     on_board?(end_pos) &&
+    valid_move_distance?(end_pos) &&
     empty_space?(end_pos)
   end
 
-  def perform_jump(pos)
+  def perform_jump?(pos)
     on_board?(pos) &&
-    valid_jump_distance?(pos) &&
+    valid_move_distance?(pos) &&
     possible_capture?(pos)
   end
 
@@ -77,14 +81,14 @@ class Piece
     [(@position[0] + pos[0]) / 2, (@position[1] + pos[1]) / 2]
   end
 
-  def valid_jump_distance?(end_pos)
+  def valid_move_distance?(end_pos)
     #make sure they don't try to jump over more than one square at a time
-    x, y = end_pos
+    (jump_diffs + slide_diffs).include?(move_distance)
+  end
 
-    x_diff = (@position[0] > x ? @position[0] - x : x - @position[0])
-    y_diff = (@position[1] > y ? @position[1] - y : y - @position[1])
-
-    [x_diff, y_diff].all? { |distance| distance == 2 }
+  def move_distance(end_pos)
+    p [(end_pos[0] - @position[0]), (end_pos[1] - @position[1])]
+    [(end_pos[0] - @position[0]), (end_pos[1] - @position[1])]
   end
 
   def on_board?(pos)
@@ -93,22 +97,23 @@ class Piece
 
   def possible_capture?(pos)
     mid = middle_position(pos)
-    if @board[mid].nil? || empty_space?(mid)
+    if empty_space?(mid)
       return false
     else
       @board[mid].color != @color
     end
+    # !empty_space?(mid) && (@board[mid].color != @color)
   end
 
   def empty_space?(pos)
     @board[pos].nil?
   end
 
-  def maybe_promote
-    @color == :white ? position[0] == DIMENSION - 1 : position[0] == DIMENSION - 8
+  def promote_if_possible
+    @king = (@color == :red ? position[0] == Board::DIMENSION - 1 : position[0] == 0)
   end
 
-  def move_diffs
+  def slide_diffs
     diffs = [[@dir, 1], [@dir, -1]]
     diffs += [[-@dir, 1], [-@dir, -1]] if @king
     diffs
@@ -120,90 +125,9 @@ class Piece
     diffs
   end
 
-  def create_jump_chain
-    dup_board = @board.dup
-    duped_piece = dup_board[@position]
-    duped_piece.find_chain(@position)
-  end
-
   def all_moves
 
   end
-
-  # def find_jumps_tree
-  #   parent = PolyNodeTree.new
-  #   dup_board = board.dup
-  #   parent = dup_board
-  #   starting_point =
-  #
-  #   jump_diffs.each do |jump|
-  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
-  #
-  #   end
-  # end
-  # def find_possible_jumps_queue
-  #   return [] unless can_jump?
-  #   remaining_jumps = []
-  #
-  #   remaining_jumps << @position.dup
-  #   jump_chain = []
-  #   remaining_jumps.each do |jump|
-  #     jump_diffs.each do |diff|
-  #       new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
-  #       next unless on_board?(new_pos)
-  #       remaining_jumps << new_pos if perform_jump(new_pos)
-  #     end
-  #     jump_try = remaining_jumps.pop
-  #     @position = jump_try.dup
-  #     remaining_jumps << @position if can_jump?
-  #     p remaining_jumps
-  #   end
-  #
-  #   remaining_jumps << @position
-  # end
-
-  # def find_possible_jumps
-  #   return [] unless can_jump?
-  #
-  #   jumps = []
-  #
-  #   skip_diffs.each do |diff|
-  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
-  #
-  #     next unless on_board?(new_pos)
-  #     next unless perform_jump(new_pos)
-  #     jumps << @position
-  #     old_pos = @position.dup
-  #     @position = new_pos.dup
-  #
-  #     puts "in possible jumps now trying #{new_pos}"
-  #     jumps << find_possible_jumps
-  #     @position = old_pos
-  #   end
-  #
-  #   jumps
-  # # end
-  #
-  # def find_chain(pos)
-  #   return [pos] unless can_jump?
-  #   jumps = []
-  #   chain = []
-  #   jump_diffs.each do |diff|
-  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
-  #     jumps << new_pos if perform_jump(new_pos) && on_board?(new_pos)
-  #   end
-  #
-  #   p jumps
-  #
-  #   jumps.each do |jump|
-  #     chain << jump if perform_jump(jump)
-  #     @position = jump
-  #     p @position
-  #     chain += find_chain(@position)
-  #   end
-  #   jumps << find_chain(jumps.pop)
-  #   chain
-  # end
 
   def can_jump?
     jump_diffs.each do |diff|
@@ -216,7 +140,7 @@ class Piece
   end
 
   def to_s
-    @color == :white ? 'W' : 'R'
+    @color == :white ? (@king ? '♔' : '♙') : (@king ? '♚' : '♟')
   end
 
   def dup
