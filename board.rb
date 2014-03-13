@@ -16,6 +16,10 @@ class Board
     @grid[x][y] = piece
   end
 
+  def capture_piece(position)
+    self[position] = nil
+  end
+
   def move(start_pos, end_pos, color)
     piece = self[start_pos]
 
@@ -37,7 +41,8 @@ class Board
     # duped board should start empty
     duped_board = Board.new
     @grid.flatten.compact.each do |piece|
-      duped_board[piece.position] = piece.dup(duped_board)
+      duped_board[piece.position] = piece.dup
+      duped_board[piece.position].board = duped_board
     end
     duped_board
   end
