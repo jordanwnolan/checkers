@@ -30,10 +30,9 @@ class Board
     end
   end
 
-  def move!(start_pos, end_pos)
+  def update_piece_position(start_pos, end_pos)
     piece = self[start_pos]
-    self[end_pos] = piece
-    self[start_pos] = nil        # move self from start to end
+    self[end_pos],self[start_pos] = piece, nil
     piece.position = end_pos
   end
 

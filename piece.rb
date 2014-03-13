@@ -13,24 +13,49 @@ class Piece
   def perform_moves!(move_sequence)
     if move_sequence.length == 1
       move = move_sequence[0]
-      p move
       unless perform_slide(move) || perform_jump(move)
         raise IllegalMoveError
       else
-        @board.capture_piece(middle_position(move)) if perform_jump(move)
-        @board.move!(@position, move)
+        if perform_jump(move)
+          make_capture(move)
+        else
+          @board.update_piece_position(@position, move)
+        end
+        return true
       end
+    end
+
+    move_sequence.each do |move|
+      unless perform_jump(move)
+        raise IllegalMoveError.new("You can only chain multiple jumps")
+      end
+      make_capture(move)
+    end
+  end
+
+  def make_capture(pos)
+    @board.capture_piece(middle_position(pos))
+    @board.update_piece_position(@position, pos)
+  end
+
+  def perform_moves(move_sequence)
+    if valid_move_seq?(move_sequence)
+      perform_moves!(move_sequence)
+    else
+      raise IllegalMoveError
     end
   end
 
   def valid_move_seq?(move_sequence)
     duped_board = @board.dup
     duped_piece = duped_board[@position]
-
-    move_sequence.each do |move|
-      raise IllegalMoveError unless duped_piece.perform_jump(move)
-      duped_board.capture_piece(duped_piece.middle_position(move))
-      duped_board.move!(duped_piece.position, move)
+    begin
+      duped_piece.perform_moves!(move_sequence)
+    rescue Exception => e
+      puts e.message
+      return false
+    else
+      true
     end
   end
 
