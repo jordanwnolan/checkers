@@ -6,7 +6,7 @@ class Piece
     @color = color
     @king = king
     @position = position
-    @dir = (@color == :white ? 1 : -1) #sets a multiplier so can have same
+    @dir = (@color == :white ? -1 : 1) #sets a multiplier so can have same
                                     #methods for moving up or down the board
   end
 
@@ -114,12 +114,113 @@ class Piece
     diffs
   end
 
+  def jump_diffs
+    diffs = [[@dir*2, -2], [@dir*2, 2]]
+    diffs += [[-@dir*2, 2], [-@dir*2, -2]] if @king
+    diffs
+  end
+
+  def create_jump_chain
+    dup_board = @board.dup
+    duped_piece = dup_board[@position]
+    duped_piece.find_chain(@position)
+  end
+
+  def all_moves
+
+  end
+
+  # def find_jumps_tree
+  #   parent = PolyNodeTree.new
+  #   dup_board = board.dup
+  #   parent = dup_board
+  #   starting_point =
+  #
+  #   jump_diffs.each do |jump|
+  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
+  #
+  #   end
+  # end
+  # def find_possible_jumps_queue
+  #   return [] unless can_jump?
+  #   remaining_jumps = []
+  #
+  #   remaining_jumps << @position.dup
+  #   jump_chain = []
+  #   remaining_jumps.each do |jump|
+  #     jump_diffs.each do |diff|
+  #       new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
+  #       next unless on_board?(new_pos)
+  #       remaining_jumps << new_pos if perform_jump(new_pos)
+  #     end
+  #     jump_try = remaining_jumps.pop
+  #     @position = jump_try.dup
+  #     remaining_jumps << @position if can_jump?
+  #     p remaining_jumps
+  #   end
+  #
+  #   remaining_jumps << @position
+  # end
+
+  # def find_possible_jumps
+  #   return [] unless can_jump?
+  #
+  #   jumps = []
+  #
+  #   skip_diffs.each do |diff|
+  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
+  #
+  #     next unless on_board?(new_pos)
+  #     next unless perform_jump(new_pos)
+  #     jumps << @position
+  #     old_pos = @position.dup
+  #     @position = new_pos.dup
+  #
+  #     puts "in possible jumps now trying #{new_pos}"
+  #     jumps << find_possible_jumps
+  #     @position = old_pos
+  #   end
+  #
+  #   jumps
+  # # end
+  #
+  # def find_chain(pos)
+  #   return [pos] unless can_jump?
+  #   jumps = []
+  #   chain = []
+  #   jump_diffs.each do |diff|
+  #     new_pos = [@position[0] + diff[0], @position[1] + diff[1]]
+  #     jumps << new_pos if perform_jump(new_pos) && on_board?(new_pos)
+  #   end
+  #
+  #   p jumps
+  #
+  #   jumps.each do |jump|
+  #     chain << jump if perform_jump(jump)
+  #     @position = jump
+  #     p @position
+  #     chain += find_chain(@position)
+  #   end
+  #   jumps << find_chain(jumps.pop)
+  #   chain
+  # end
+
+  def can_jump?
+    jump_diffs.each do |diff|
+      pos_to_try = [@position[0] + diff[0], @position[1] + diff[1]]
+      if perform_jump(pos_to_try)
+        return true
+      end
+    end
+    false
+  end
+
   def to_s
     @color == :white ? 'W' : 'R'
   end
 
   def dup
-    duped_piece = Piece.new(@position.dup,@color)
+    duped_piece = Piece.new(@position.dup,@color,nil,@king)
   end
 end
 

@@ -20,13 +20,26 @@ class Board
     self[position] = nil
   end
 
-  def move(start_pos, end_pos, color)
+  def move(start_pos, moves, color)
     piece = self[start_pos]
+    move_precheck(piece,color)
 
-    if valid_move?(piece,end_pos,color)
-      # move!(dfead)
-      piece.position  = end_pos
-      self[start_pos], self[end_pos] = nil, piece
+    piece.perform_moves(moves) if piece.valid_move_seq?(moves)
+  end
+
+  def pieces
+    @grid.flatten.compact
+  end
+
+  def forced_to_jump?(color)
+    pieces.select { |piece| piece.color == color && piece.can_jump? }.any?
+  end
+
+  def move_precheck(piece,color)
+    raise "No piece at this position!" if piece.nil?
+
+    unless color == piece.color
+      raise "You cannot move your opponent's piece!"
     end
   end
 
@@ -50,34 +63,27 @@ class Board
     render_board
   end
 
+  def setup_pieces
+    DIMENSION.times do |x|
+      DIMENSION.times do |y|
+        if x < 3
+          self[[x,y]] = Piece.new([x,y], :red, self, true) if (x + y).even?
+        end
+        if x > 4
+          self[[x,y]] = Piece.new([x,y], :white, self, true) if (x + y).even?
+        end
+      end
+    end
+  end
+
   private
 
   def self.generate_board
     grid = Array.new(DIMENSION) { Array.new(DIMENSION) }
   end
 
-  def setup_pieces
-    DIMENSION.times do |row|
-      DIMENSION.times do |col|
-
-      end
-    end
-  end
-
   def valid_move?(piece, end_pos, color)
-    raise "No piece at this position!" if piece.nil?
 
-    unless color == piece.color
-      raise "You cannot move your opponent's piece!"
-    end
-
-    unless piece.moves.include?(end_pos)
-      raise "Invalid move for #{piece.color}'s #{piece.class}!"
-    end
-
-    if piece.move_into_check?(end_pos)
-      raise "cannot move #{piece.color}'s #{piece.class} into check!"
-    end
 
     true
   end
@@ -95,7 +101,7 @@ class Board
     @grid.reverse.each_with_index do |row, i|
       row.each_with_index do |tile, j|
         icon = (tile.nil? ? ' ' : "#{tile.to_s}")
-        color = ((i + j).even? ? :light_white : :light_red)
+        color = ((i + j).even? ? :light_red : :light_white)
         board_string << " #{icon} ".colorize(:background => color)
       end
       board_string << " #{DIMENSION - i}\n"
